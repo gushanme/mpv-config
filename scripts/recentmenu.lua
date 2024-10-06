@@ -294,6 +294,22 @@ function write_json(force)
     end
 end
 
+function clip_uosc_menu_item(menu)
+    local menu_items = {}
+    for _, item in ipairs(menu.items) do
+        if item.hint and item.hint ~= "" then
+            item.title, width = utf8_substring(item.title, 1, o.width * 0.618)
+            item.hint = utf8_substring(item.hint, 1, o.width - width)
+        else
+            item.title = utf8_substring(item.title, 1, o.width)
+        end
+        table.insert(menu_items, item)
+        print(utils.format_json(menu_items))
+    end
+    menu.items = menu_items
+    return menu
+end
+
 function append_item(path, filename, title)
     local new_items = { { title = filename, hint = title, value = { "loadfile", path } } }
     read_json()
@@ -312,13 +328,13 @@ end
 
 function remove_item(index)
     table.remove(menu.items, index)
-    local json = utils.format_json(menu)
+    local json = utils.format_json(clip_uosc_menu_item(menu))
     mp.commandv('script-message-to', 'uosc', 'update-menu', json)
     write_json()
 end
 
 function open_menu_uosc()
-    local json = utils.format_json(menu)
+    local json = utils.format_json(clip_uosc_menu_item(menu))
     mp.commandv('script-message-to', 'uosc', 'open-menu', json)
 end
 
@@ -369,10 +385,7 @@ function get_dyn_menu_title(title, hint, path)
         title = filename
         hint = extension
     end
-    local title_clip = utf8_substring(title, 1, o.width)
-    if title ~= title_clip then
-        title = utf8_substring(title_clip, 1, o.width - 2) .. "..."
-    end
+
     return string.format('%s\t%s', title, hint:upper())
 end
 
@@ -415,13 +428,7 @@ function on_load()
     if is_protocol(path) and title and title ~= "" then
         filename, title = title, filename
     end
-    if title and title ~= "" then
-        local width
-        filename, width = utf8_substring(filename, 1, o.width * 0.618)
-        title = utf8_substring(title, 1, o.width - width)
-    else
-        filename = utf8_substring(filename, 1, o.width)
-    end
+
     current_item = { path, filename, title }
     append_item(unpack(current_item))
 end
